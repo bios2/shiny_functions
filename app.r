@@ -9,44 +9,52 @@ ui <- dashboardPage(
   sidebar = dashboardSidebar(disable = TRUE),
 
   body = dashboardBody(
-
+    withMathJax(),
     fluidRow(
-        column(width = 2,
-               radioButtons("eq", "Choose your model",
-                            c("Linear" = "linear",
-                              "Log-linear" = "loglinear",
-                              "Michaelis-Menton" = "mich",
-                              "Monod" = "monod")),
+      column(width = 4,
+             box(width = NULL,
+                 status = "primary",
+                 title  = "Choose your model",
+                 solidHeader = T,
+
+                 radioButtons("eq", "model type",
+                              c("Linear" = "linear",
+                                "Log-linear" = "loglinear",
+                                "Michaelis-Menton" = "mich",
+                                "Monod" = "monod")),
+
+                 textOutput(outputId = "matheqn"),
 
 
-               # Input: Slider for parameter alpha
-               sliderInput("alpha",
-                           "alpha",
-                           value = 0,
-                           min = -10,
-                           max = 200),
+                 # Input: Slider for parameter alpha
+                 sliderInput("alpha",
+                             "alpha",
+                             value = 0,
+                             min = -10,
+                             max = 200),
 
-               # Input: Slider for parameter beta
-               sliderInput("beta",
-                           "beta",
-                           value = 0,
-                           min = -10,
-                           max = 100)
-        ),
+                 # Input: Slider for parameter beta
+                 sliderInput("beta",
+                             "beta",
+                             value = 0,
+                             min = -10,
+                             max = 100)
+             )
+      ),
 
-        column(width = 10,
-               box(width = 5,
-                   status = "primary",
-                   h4("Model", align = "center"),
-                   plotOutput(outputId = "data")
-               ),
-               # Input: Select the model type
-               box(width = 5,
-                   status = "primary",
-                   h4("Residuals", align = "center"),
-                   plotOutput(outputId = "PDF")
-               )
-        )
+      column(width = 8,
+             box(width = 4,
+                 status = "primary",
+                 h4("Model", align = "center"),
+                 plotOutput(outputId = "data")
+             ),
+             # Input: Select the model type
+             box(width = 4,
+                 status = "primary",
+                 h4("Residuals", align = "center"),
+                 plotOutput(outputId = "PDF")
+             )
+      )
     )
   )
 )
@@ -66,6 +74,18 @@ server <- function(input, output) {
              )
     }
     )
+
+    math_expression <- reactive({
+        switch(input$eq,
+               linear = '$$
+               y = \\alpha + \\beta x
+               $$',
+               loglinear = function(xvar) input$alpha + input$beta * log(xvar),
+               mich = function(xvar) input$alpha * xvar/(input$alpha/input$beta + xvar)
+        )
+    })
+
+    output$matheqn <- renderText(math_expression())
 
     # Make the plots
     output$data <- renderPlot({
