@@ -3,8 +3,7 @@ library(shinydashboard)
 
 # Define UI
 ui <- dashboardPage(
-
-  header = dashboardHeader(title = "Composition des communautes", titleWidth = 350),
+  header = dashboardHeader(title = "Hemlock data", titleWidth = 350),
 
   sidebar = dashboardSidebar(disable = TRUE),
 
@@ -38,18 +37,26 @@ ui <- dashboardPage(
                              "beta",
                              value = 0,
                              min = -10,
-                             max = 100)
+                             max = 100),
+
+                 sliderInput("sd",
+                             "sd",
+                             value = 1,
+                             min = .1,
+                             max = 200)
              )
       ),
 
-      column(width = 8,
-             box(width = 4,
+      column(width = 4,
+             box(width = NULL,
                  status = "primary",
                  h4("Model", align = "center"),
                  plotOutput(outputId = "data")
-             ),
+             )
+      ),
+      column(width = 4,
              # Input: Select the model type
-             box(width = 4,
+             box(width = NULL,
                  status = "primary",
                  h4("Residuals", align = "center"),
                  plotOutput(outputId = "PDF")
@@ -85,7 +92,11 @@ server <- function(input, output) {
         )
     })
 
-    output$matheqn <- renderText(math_expression())
+    output$matheqn <- renderText("
+                                 $$
+
+                                 $$
+                                 ")
 
     # Make the plots
     output$data <- renderPlot({
@@ -95,16 +106,24 @@ server <- function(input, output) {
         lines(x, functional_form()(x), lwd = 2)
     })
 
+    expected_residual <- reactive({
+      function(x) dnorm(x, mean=0, sd = input$sd)
+    })
+
     # PDF
     output$PDF <- renderPlot({
 
       resid <- hemlock[,2] - functional_form()(hemlock[,1])
 
-      h <- hist(resid, breaks=10, xlab="Observed - Predicted", main="")
-      xvec <- seq(min(resid),max(resid),length=100)
-      pdf  <- dnorm(xvec, mean=mean(resid), sd=sd(input$sd))
-      pdf <- pdf*diff(h$mids[1:2])*length(resid)
-      lines(xvec, pdf, lwd=2)
+      h <- hist(resid, breaks=10,
+                xlab="Observed - Predicted",
+                xlim = c(-200,200),
+                main="", freq = FALSE)
+
+      curve(dnorm(x, mean = mean(resid), sd = sd(resid)),
+            add = TRUE, col = "red")
+
+      curve(expected_residual()(x), add = TRUE, col = "blue")
     })
 
 }
