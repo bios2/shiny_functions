@@ -19,10 +19,18 @@ ui <- dashboardPage(
                  radioButtons("eq", "model type",
                               c("Linear" = "linear",
                                 "Log-linear" = "loglinear",
-                                "Michaelis-Menton" = "mich",
-                                "Monod" = "monod")),
+                                "Michaelis-Menton" = "mich")),
 
-                 textOutput(outputId = "matheqn"),
+                 helpText("
+              $$
+              \\begin{align}
+              \\mu &= \\alpha + \\beta x \\\\
+              \\mu &= \\alpha + \\beta \\text{ln}(x) \\\\
+              \\mu &= \\frac{\\alpha x}{\\alpha / \\beta + x} \\\\
+              y &\\sim \\text{Normal}(\\mu, \\sigma)
+              \\end{align}
+               $$
+              "),
 
 
                  # Input: Slider for parameter alpha
@@ -40,7 +48,7 @@ ui <- dashboardPage(
                              max = 100),
 
                  sliderInput("sd",
-                             "sd",
+                             "sigma",
                              value = 1,
                              min = .1,
                              max = 200)
@@ -81,22 +89,6 @@ server <- function(input, output) {
              )
     }
     )
-
-    math_expression <- reactive({
-        switch(input$eq,
-               linear = '$$
-               y = \\alpha + \\beta x
-               $$',
-               loglinear = function(xvar) input$alpha + input$beta * log(xvar),
-               mich = function(xvar) input$alpha * xvar/(input$alpha/input$beta + xvar)
-        )
-    })
-
-    output$matheqn <- renderText("
-                                 $$
-
-                                 $$
-                                 ")
 
     # Make the plots
     output$data <- renderPlot({
